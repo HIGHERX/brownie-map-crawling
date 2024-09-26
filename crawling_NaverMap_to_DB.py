@@ -97,7 +97,7 @@ def callRequest(url: str, page: int):
 				time.sleep(60)
 		
 		except requests.exceptions.RequestException as e:
-			logging(f"Request 오류 발생  ->  {e}")
+			logging(f"\nRequest 오류 발생 : {displaySearch}\n  ->  {e}")
 			isFirstTry = False
 			tryCount += 1
 			time.sleep(60)
