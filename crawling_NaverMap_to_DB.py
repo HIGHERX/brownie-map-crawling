@@ -19,20 +19,29 @@ from db_connection import (
 )
 
 from crawling_keyword import (
-	search_location_list, icecream_key_list, photoshop_key_list, selflaundry_key_list, studycafe_key_list
-	, convenience_key_list, ramen_key_list, cafe_key_list, stationary_key_list, petshop_key_list
-	, fruit_key_list, etc_search_key_list
+	search_location_list
+	, icecream_key_list, photoshop_key_list, selflaundry_key_list, studycafe_key_list, convenience_key_list
+	, ramen_key_list, cafe_key_list, stationary_key_list, petshop_key_list, fruit_key_list
+	, print_key_list, etc_search_key_list
 	, get_category
 )
 
 ## argument 설정
 parser = argparse.ArgumentParser()
-parser.add_argument('-crawldate', help=' : Please set the Crawling Date') 
+parser.add_argument('-crawldate', type=str, help=' : Please set the Crawling Date') 
+parser.add_argument('-db', type=str, help=' : Please choose the DB (dev or prod)') 
 args = parser.parse_args()
 
-argv = sys.argv
+# argv = sys.argv
 crawlDate = args.crawldate
-print("\nCrawling Date = ", crawlDate, flush=True)
+db = args.db
+
+if crawlDate is None or db is None:
+	print("\nArgument 필요합니다. (-crawldate, -db)\n", flush=True)
+	exit()
+
+print("\n## 네이버 map 정보 크롤링을 시작합니다. ##\n")
+print("\nCrawling Date = ", crawlDate, ", db = ", db, flush=True)
 
 today_date = datetime.today().strftime("%Y%m%d")
 
@@ -40,25 +49,25 @@ today_date = datetime.today().strftime("%Y%m%d")
 whole_search_key = (
 	icecream_key_list + photoshop_key_list + selflaundry_key_list + studycafe_key_list + convenience_key_list
 	+ ramen_key_list + cafe_key_list + stationary_key_list + petshop_key_list + fruit_key_list
-	+ etc_search_key_list
+	+ print_key_list + etc_search_key_list
 )
-# whole_search_key = cafe_key_list
-
-# DB 풀 초기화
-init_db_pool()
-
-# 기존에 저장되어 있는 store 인지 체크하는 쿼리
-selectCrawlingStoreMap = "select * from crawling_store_map"
-
-# 새로운 데이터 저장하는 쿼리
-insertCrawlingStoreMap = (
-	"insert into crawling_store_map "
-	" (crawling_date, naver_store_id, store_name, created_at, search_key, address, si_address, goon_gu_address, latitude, longitude, contact_number, operation_time, brwnie_yn, naver_category, category) "
-	" values (%s, %s, %s, now(), %s, %s, %s, %s, %s, %s, %s, %s, false, %s, %s); "
-)
+whole_search_key = print_key_list
 
 def logging(message: str):
 	print(message, flush=True)
+
+# DB 풀 초기화
+init_db_pool(db, "brwnie")
+
+# 기존에 저장되어 있는 store 인지 체크하는 쿼리
+selectCrawlingStoreMap = "SELECT * FROM crawling_store_map"
+
+# 새로운 데이터 저장하는 쿼리
+insertCrawlingStoreMap = (
+	"INSERT INTO crawling_store_map "
+	" (crawling_date, naver_store_id, store_name, created_at, search_key, address, si_address, goon_gu_address, latitude, longitude, contact_number, operation_time, brwnie_yn, naver_category, category) "
+	" VALUES (%s, %s, %s, now(), %s, %s, %s, %s, %s, %s, %s, %s, false, %s, %s); "
+)
 
 def callRequest(url: str, page: int):
 	isIncludeCookie = True
@@ -217,4 +226,6 @@ for location in search_location_list:
 			logging("totalCount= 0")
 
 # DB 풀 종료
-close_db_pool()
+close_db_pool(db, "brwnie")
+
+logging("\n## Crawling 수행 완료되었습니다. ##\n")

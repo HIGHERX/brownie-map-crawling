@@ -4,10 +4,10 @@
 timestamp=$(date +"%Y%m%d%H%M%S")
 
 # 로그 파일 경로
-LOG_FILE="./logs/crawling_log_$1_$timestamp.log"
+LOG_FILE="./logs/$2_crawling_log_$1_$timestamp.log"
 
 # batch pid 파일 경로
-PID_FILE="./logs/crawling_batch_pid_$1_$timestamp.txt"
+PID_FILE="./logs/$2_crawling_batch_pid_$1_$timestamp.txt"
 
 # 파이썬 스크립트 경로
 PYTHON_SCRIPT="crawling_NaverMap_to_DB.py"
@@ -28,20 +28,27 @@ check_date() {
 }
 
 # 인자 개수 확인
-if [ $# -eq 0 ]; then
-    echo "오류: argument가 필요합니다. (crawling date)"
-    echo "사용법: $0 <날짜 (YYYY-MM-DD 형식)>"
+if [ $# -ne 2 ]; then
+    echo "오류: 2개의 argument가 필요합니다. (crawling date, db)"
+    echo "사용법: $0 <날짜 (YYYY-MM-DD 형식)> <dev 또는 prod>"
     exit 1  # 에러 코드 1로 종료
 fi
 
 # 날짜 형식 확인
 if ! check_date "$1"; then
-    echo "오류: '$1'은 유효한 날짜 형식이 아닙니다."
-    echo "사용법: $0 <날짜 (YYYY-MM-DD 형식)>"
+    echo "오류: 1번째 argument '$1'은 유효한 날짜 형식이 아닙니다."
+    echo "사용법: $0 <날짜 (YYYY-MM-DD 형식)> <dev 또는 prod>"
     exit 1
 fi
 
-nohup python3 $PYTHON_SCRIPT -crawldate $1 > "$LOG_FILE" 2>&1 & # 모든 출력과 오류를 로그 파일에 추가
+# DB system 확인
+if [[ "$2" != "dev" && "$2" != "prod" ]]; then
+    echo "오류: 2번째 argument '$2'는 dev 또는 prod 만 가능합니다."
+    echo "사용법: $0 <날짜 (YYYY-MM-DD 형식)> <dev 또는 prod>"
+    exit 1
+fi
+
+nohup python3 $PYTHON_SCRIPT -crawldate $1 -db $2 > "$LOG_FILE" 2>&1 & # 모든 출력과 오류를 로그 파일에 추가
 
 # PID를 저장하여 나중에 확인할 수 있게 함
 echo $! > $PID_FILE
@@ -49,7 +56,7 @@ echo $! > $PID_FILE
 echo ""
 echo "-------------------------------------------------------------------------"
 echo ""
-echo " Crawling Batch 시작했습니다."
+echo " [$2] Crawling Batch 시작했습니다."
 echo ""
 echo "     * Process ID :  $!"
 echo ""
@@ -61,7 +68,7 @@ echo "        - batch 완료는 별도 알림이 없습니다."
 echo ""
 echo "-------------------------------------------------------------------------"
 echo ""
-echo " Crawling 로그 파일 :  $LOG_FILE"
+echo " [$2] Crawling 로그 파일 :  $LOG_FILE"
 echo ""
 echo "     * 실시간 로그 현황은 아래 명령어로 확인하세요."
 echo ""
