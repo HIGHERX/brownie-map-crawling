@@ -51,7 +51,6 @@ whole_search_key = (
 	+ ramen_key_list + cafe_key_list + stationary_key_list + petshop_key_list + fruit_key_list
 	+ print_key_list + etc_search_key_list
 )
-whole_search_key = print_key_list
 
 def logging(message: str):
 	print(message, flush=True)
