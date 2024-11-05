@@ -11,6 +11,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'prop'))
 
 from properties import (
 	baseUrl, baseOption, baseQuery, basePage, headerWithCookie, headerNoCookie
+	, storeInfoUrl, storeInfoUrlParam, storeInfoHeader
 )
 
 from db_connection import (
@@ -23,6 +24,7 @@ from crawling_keyword import (
 	, icecream_key_list, photoshop_key_list, selflaundry_key_list, studycafe_key_list, convenience_key_list
 	, ramen_key_list, cafe_key_list, stationary_key_list, petshop_key_list, fruit_key_list
 	, print_key_list, etc_search_key_list
+	, cigarette_list, side_dish_list, warehouse_list
 	, get_category
 )
 
@@ -48,8 +50,8 @@ today_date = datetime.today().strftime("%Y%m%d")
 ## 검색할 keyword 선택
 whole_search_key = (
 	icecream_key_list + photoshop_key_list + selflaundry_key_list + studycafe_key_list + convenience_key_list
-	+ ramen_key_list + cafe_key_list + stationary_key_list + petshop_key_list + fruit_key_list
-	+ print_key_list + etc_search_key_list
+	+ ramen_key_list + cafe_key_list + stationary_key_list + petshop_key_list + print_key_list
+	+ cigarette_list + side_dish_list + fruit_key_list + warehouse_list + etc_search_key_list
 )
 
 def logging(message: str):
@@ -112,6 +114,54 @@ def callRequest(url: str, page: int):
 	
 	return resultJson
 
+def getPhoneInfoByStoreId(eachNaverStoreId: str, phoneList: list):
+	url = storeInfoUrl + eachNaverStoreId + "/home" + storeInfoUrlParam
+	headerValue = storeInfoHeader
+
+	try:
+		response = requests.get(url, headers=headerValue, allow_redirects=False)
+		response.raise_for_status()  # 요청이 실패할 경우 예외 발생
+
+		# ### br 로 압축된 정보일때 사용하는 소스 ###	
+		# logging("response.headers.get('Content-Encoding') : " + response.headers.get('Content-Encoding'))
+		# try:
+		# 	decompressed_data = brotli.decompress(response.content)
+		# 	text = decompressed_data.decode('utf-8')  # 적절한 인코딩으로 디코드
+		# except brotli.Error as e:
+		# 	print(f"Brotli decompression failed: {e}")
+
+		responseBody = str(response.content)
+
+		# 가상 전화번호
+		virtualPhone = ""
+		virtualPhoneRawData = responseBody[responseBody.find("\"virtualPhone\""):]
+		if virtualPhoneRawData.find(":") > 0:
+			tempPhone = virtualPhoneRawData.split(":")[1]
+			if tempPhone.find(",") > 0:
+				virtualPhone = tempPhone.split(",")[0].replace("\"", "").replace("null", "").strip()
+
+		# 전화번호
+		phone = ""
+		phoneRawData = responseBody[responseBody.find("\"phone\""):]
+		if phoneRawData.find(":") > 0:
+			tempPhone = phoneRawData.split(":")[1]
+			if tempPhone.find(",") > 0:
+				phone = tempPhone.split(",")[0].replace("\"", "").replace("null", "").strip()
+
+		newPhoneList = []
+
+		if virtualPhone != '' and virtualPhone not in phoneList:
+			newPhoneList.append(virtualPhone)
+		
+		if phone != '' and phone not in phoneList and phone not in newPhoneList:
+			newPhoneList.append(phone)
+
+		# logging("newPhoneList : " + str(newPhoneList))
+		return newPhoneList
+
+	except requests.exceptions.RequestException as e:
+		logging("exception : " + e)
+		return []
 
 for location in search_location_list:
 
@@ -164,36 +214,27 @@ for location in search_location_list:
 						# table에 존재하지 않는 매장은 저장 (저장된 매장은 pass)
 						#   (existCount=0 이면, 저장되지 않은 매장)
 						if existCount == 0:
-							resultPhone = ''
-							resultTel = ''
-							resultTelDisplay = ''
-							resultVirtualTel = ''
-							resultVirtualTelDisplay = ''
+							phoneList = []
 
 							if resultList["tel"] != '':
-								resultTel = resultList["tel"]
-								resultPhone = resultTel
+								phoneList.append(resultList["tel"])
 							
-							if resultList["telDisplay"] != '' and resultList["telDisplay"] != resultTel:
-								resultTelDisplay = resultList["telDisplay"]
-								if resultPhone != '':
-									resultPhone += ', ' + resultList["telDisplay"]
-								else:
-									resultPhone = resultList["telDisplay"]
+							if resultList["telDisplay"] != '' and resultList["telDisplay"] not in phoneList:
+								phoneList.append(resultList["telDisplay"])
 
-							if resultList["virtualTel"] != '' and resultList["virtualTel"] != resultTel and resultList["virtualTel"] != resultTelDisplay:
-								resultVirtualTel = resultList["virtualTel"]
-								if resultPhone != '':
-									resultPhone += ', ' + resultList["virtualTel"]
-								else:
-									resultPhone = resultList["virtualTel"]
+							if resultList["virtualTel"] != '' and resultList["virtualTel"] not in phoneList:
+								phoneList.append(resultList["virtualTel"])
 
-							if resultList["virtualTelDisplay"] != '' and resultList["virtualTelDisplay"] != resultTel and resultList["virtualTelDisplay"] != resultTelDisplay and resultList["virtualTelDisplay"] != resultVirtualTel:
-								resultVirtualTelDisplay = resultList["virtualTelDisplay"]
-								if resultPhone != '':
-									resultPhone += ', ' + resultList["virtualTelDisplay"]
-								else:
-									resultPhone = resultList["virtualTelDisplay"]
+							if resultList["virtualTelDisplay"] != '' and resultList["virtualTelDisplay"] not in phoneList:
+								phoneList.append(resultList["virtualTelDisplay"])
+
+							# 추가로 전화번호 정보 가져오는 url 호출
+							newPhoneList = getPhoneInfoByStoreId(eachNaverStoreId, phoneList)
+							phoneList += newPhoneList
+
+							resultPhone = ''
+							resultPhone = ', '.join(phoneList)
+							# logging("resultPhone : " + resultPhone)
 
 							address = resultList["address"]
 

@@ -17,6 +17,16 @@ headerNoCookie = {
   , 'Cache-Control': 'no-cache'
   , 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'
 }
+# 스토어 개별 조회 url
+storeInfoUrl = "https://pcmap.place.naver.com/place/"
+storeInfoUrlParam = "?entry=bmp&from=map&fromPanelNum=2&timestamp=202411021458"
+storeInfoHeader = {
+  'cookie': 'NACT=1; NNB=LZKHOTW4IROWK; PUBLIC_PAGE=0; _ga=GA1.2.1911296303.1710215918; NAC=5ZJQBMATke4ZA; ASID=3a7a99be00000190c8cf9a360000007a; NV_WETR_LAST_ACCESS_RGN_M="MDk2ODAxMDE="; NV_WETR_LOCATION_RGN_M="MDk2ODAxMDE="; NFS=2; _fwb=184CCEBMFxVew3TKpDlzqAr.1728899573327; page_uid=ixumcdqVOZossB1qhQKssssssD8-002920; BUC=hqWpV2KckZDQbVUBZa0c54Z0pTo0Ect6st2nEwguhrs=; wcs_bt=sp_97bab35354c640:1730678449|sp_a4c2f96ee974e0:1728899573'
+  , 'accept-encoding': 'gzip, deflate, br, zstd'
+  , 'accept-language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'
+  , 'priority': 'u=0, i'
+  , 'User-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36'
+}
 
 ## 브라우니 개발 DB connection 정보
 dev_brwnie_db_host = "db-dev-22-08-22.brwnie.kr"
